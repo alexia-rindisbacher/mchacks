@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<body>
+
+<h1>To Do List</h1>
+<label for="task">Enter a new task:</label>
+<input type="text" id="task">
+<button onclick="addTask()">Add Task</button>
+
+</body>
+
+<p>To Do:</p>
+<ul id="taskList"> </ul>
+</html>
+
+<script>
+async function addTask() {
+    const input = document.getElementById("task");
+    const response = await fetch("http://127.0.0.1:5000/tasks", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ description: input.value })
+    });
+
+    if (!response.ok) return;
+
+    const task = await response.json();
+
+    const li = document.createElement("li");
+    li.textContent = task.description;
+    document.getElementById("taskList").appendChild(li);
+
+    input.value = "";
+}
+
+async function loadTasks() {
+    const response = await fetch("http://127.0.0.1:5000/tasks");
+    const tasks = await response.json();
+    
+    const ul = document.getElementById("taskList");
+    ul.innerHTML = ""; // clear any old content
+
+    tasks.forEach(task => {
+        const li = document.createElement("li");
+        li.textContent = task.description;
+        ul.appendChild(li);
+    });
+}
+
+// Run when page loads
+window.onload = loadTasks;
+</script>
