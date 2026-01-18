@@ -2,13 +2,14 @@ import { createApp } from 'vue'
 import { createRouter, createWebHistory } from 'vue-router'
 import './style.css'
 import App from './App.vue'
+import Totals from './views/Totals.vue'
 
 // Simple router setup for navigation
 const router = createRouter({
   history: createWebHistory(),
   routes: [
     { path: '/', name: 'Home', component: App },
-    { path: '/totals', name: 'Totals', component: App }
+    { path: '/totals', name: 'Totals', component: Totals }
   ]
 })
 

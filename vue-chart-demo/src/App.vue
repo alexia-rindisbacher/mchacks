@@ -243,52 +243,52 @@
             </div>
           </div>
 
-          <!-- Total Emissions Section (All Sections) -->
-          <div class="totals-section" v-if="allItems.length > 0">
-            <h2>Total Emissions (All Sections)</h2>
+          <!-- Total Emissions Section -->
+          <div class="totals-section" v-if="currentItems.length > 0">
+            <h2>Total Emissions</h2>
             <div class="totals-grid">
               <div class="total-box">
                 <h3>CO2</h3>
-                <p v-fit-text>{{ formatNumber(allTotalCO2, 4) }} kg CO2</p>
+                <p v-fit-text>{{ formatNumber(currentTotalCO2, currentSection === 'supplies' ? 2 : 4) }} kg CO2</p>
               </div>
               <div class="total-box">
                 <h3>Water</h3>
-                <p v-fit-text>{{ formatNumber(allTotalWater, 4) }} EIP</p>
+                <p v-fit-text>{{ formatNumber(currentTotalWater, currentSection === 'supplies' ? 2 : 4) }} EIP</p>
               </div>
               <div class="total-box">
                 <h3>Energy</h3>
-                <p v-fit-text>{{ formatNumber(allTotalEnergy, 4) }} EIP</p>
+                <p v-fit-text>{{ formatNumber(currentTotalEnergy, currentSection === 'supplies' ? 2 : 4) }} EIP</p>
               </div>
               <div class="total-box">
                 <h3>GWI</h3>
-                <p v-fit-text>{{ formatNumber(allTotalGWI, 4) }} EIP</p>
+                <p v-fit-text>{{ formatNumber(currentTotalGWI, currentSection === 'supplies' ? 2 : 4) }} EIP</p>
               </div>
             </div>
           </div>
 
-          <!-- Max Emissions Section (Across All Sections) -->
-          <div v-if="allMaxCO2Product" class="max-section">
-            <h2>Items with Most Emissions (All Sections)</h2>
+          <!-- Max Emissions Section -->
+          <div v-if="currentMaxCO2Product" class="max-section">
+            <h2>Items with Most Emissions</h2>
             <div class="max-grid">
               <div class="max-box">
                 <h3>CO2</h3>
-                <p>{{ allMaxCO2Product.label || allMaxCO2Product.mode || allMaxCO2Product.type || (allMaxCO2Product.packaging + ' - ' + allMaxCO2Product.diet) }}</p>
-                <p v-fit-text>{{ formatNumber(allMaxCO2Product.co2, allMaxCO2Product.section === 'supplies' ? 2 : 4) }} {{ allMaxCO2Product.section === 'supplies' ? 'kg CO2' : 'EIP' }}</p>
+                <p>{{ currentMaxCO2Product.label || currentMaxCO2Product.mode || currentMaxCO2Product.type || (currentMaxCO2Product.packaging + ' - ' + currentMaxCO2Product.diet) }}</p>
+                <p v-fit-text>{{ formatNumber(currentMaxCO2Product.co2, currentSection === 'supplies' ? 2 : 4) }} {{ currentSection === 'supplies' ? 'kg CO2' : 'EIP' }}</p>
               </div>
               <div class="max-box">
                 <h3>Water</h3>
-                <p>{{ allMaxWaterProduct.label || allMaxWaterProduct.mode || allMaxWaterProduct.type || (allMaxWaterProduct.packaging + ' - ' + allMaxWaterProduct.diet) }}</p>
-                <p v-fit-text>{{ formatNumber(allMaxWaterProduct.water, allMaxWaterProduct.section === 'supplies' ? 2 : 4) }} EIP</p>
+                <p>{{ currentMaxWaterProduct.label || currentMaxWaterProduct.mode || currentMaxWaterProduct.type || (currentMaxWaterProduct.packaging + ' - ' + currentMaxWaterProduct.diet) }}</p>
+                <p v-fit-text>{{ formatNumber(currentMaxWaterProduct.water, currentSection === 'supplies' ? 2 : 4) }} EIP</p>
               </div>
               <div class="max-box">
                 <h3>Energy</h3>
-                <p>{{ allMaxEnergyProduct.label || allMaxEnergyProduct.mode || allMaxEnergyProduct.type || (allMaxEnergyProduct.packaging + ' - ' + allMaxEnergyProduct.diet) }}</p>
-                <p v-fit-text>{{ formatNumber(allMaxEnergyProduct.energy, allMaxEnergyProduct.section === 'supplies' ? 2 : 4) }} EIP</p>
+                <p>{{ currentMaxEnergyProduct.label || currentMaxEnergyProduct.mode || currentMaxEnergyProduct.type || (currentMaxEnergyProduct.packaging + ' - ' + currentMaxEnergyProduct.diet) }}</p>
+                <p v-fit-text>{{ formatNumber(currentMaxEnergyProduct.energy, currentSection === 'supplies' ? 2 : 4) }} EIP</p>
               </div>
               <div class="max-box">
                 <h3>GWI</h3>
-                <p>{{ allMaxGWIProduct.label || allMaxGWIProduct.mode || allMaxGWIProduct.type || (allMaxGWIProduct.packaging + ' - ' + allMaxGWIProduct.diet) }}</p>
-                <p v-fit-text>{{ formatNumber(allMaxGWIProduct.gwi, allMaxGWIProduct.section === 'supplies' ? 2 : 4) }} EIP</p>
+                <p>{{ currentMaxGWIProduct.label || currentMaxGWIProduct.mode || currentMaxGWIProduct.type || (currentMaxGWIProduct.packaging + ' - ' + currentMaxGWIProduct.diet) }}</p>
+                <p v-fit-text>{{ formatNumber(currentMaxGWIProduct.gwi, currentSection === 'supplies' ? 2 : 4) }} EIP</p>
               </div>
             </div>
           </div>
@@ -312,8 +312,142 @@
 
     <!-- Totals Page -->
     <div v-else-if="$route.path === '/totals'" class="totals-page">
-      <h1>Totals Page</h1>
-      <p>This page will show aggregated totals across all sections.</p>
+      <div class="totals-header">
+        <h1>Totals Page</h1>
+      </div>
+
+      <!-- Main Layout -->
+      <div class="totals-layout">
+        <!-- Sidebar with All Items -->
+        <aside class="totals-sidebar">
+          <!-- EIP Explanation -->
+          <div class="eip-explanation">
+            <p>The metric EIP refers to <a href="https://support.ecoinvent.org/impact-assessment" target="_blank">Environmental Impact Points</a></p>
+          </div>
+
+          <!-- All Items Display -->
+          <div class="all-items-section">
+            <h2>All Items</h2>
+
+            <!-- Supplies Items -->
+            <div v-if="items.length > 0" class="section-items">
+              <h3>Supplies</h3>
+              <ul>
+                <li v-for="(item, index) in items" :key="index">
+                  <span class="label-box">{{ item.label }}</span>
+                  <span class="value-box">{{ item.value }}</span>
+                </li>
+              </ul>
+            </div>
+
+            <!-- Technology Items -->
+            <div v-if="techItems.length > 0" class="section-items">
+              <h3>Technology</h3>
+              <ul>
+                <li v-for="(item, index) in techItems" :key="index">
+                  <span class="label-box">{{ item.type }}</span>
+                  <span class="value-box">{{ item.num }} ({{ item.participants }} participants)</span>
+                </li>
+              </ul>
+            </div>
+
+            <!-- Travel Items -->
+            <div v-if="travelItems.length > 0" class="section-items">
+              <h3>Travel</h3>
+              <ul>
+                <li v-for="(item, index) in travelItems" :key="index">
+                  <span class="label-box">{{ item.mode }}</span>
+                  <span class="value-box">{{ item.distance }}km ({{ item.participants }} participants)</span>
+                </li>
+              </ul>
+            </div>
+
+            <!-- Food Items -->
+            <div v-if="foodItems.length > 0" class="section-items">
+              <h3>Food</h3>
+              <ul>
+                <li v-for="(item, index) in foodItems" :key="index">
+                  <span class="label-box">{{ item.packaging }} - {{ item.diet }}</span>
+                  <span class="value-box">{{ item.num }} meals</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="totals-main">
+          <!-- Event Parameters -->
+          <div class="event-params-section">
+            <h2>Event Parameters</h2>
+            <div class="params-grid">
+              <div class="param-box">
+                <label>Number of Participants:</label>
+                <input v-model.number="totalParticipants" type="number" min="1" />
+              </div>
+              <div class="param-box">
+                <label>Event Duration (hours):</label>
+                <input v-model.number="totalHours" type="number" min="0.5" step="0.5" />
+              </div>
+              <button @click="calculateSustainabilityScore" class="calculate-btn" :disabled="!canCalculateTotal">
+                Calculate Sustainability Score
+              </button>
+            </div>
+            <p v-if="totalErrorMessage" class="error">{{ totalErrorMessage }}</p>
+          </div>
+
+          <!-- Sustainability Score Meter -->
+          <div class="score-section">
+            <h2>Sustainability Score</h2>
+            <div class="score-meter">
+              <div class="semi-circle-container">
+                <canvas ref="scoreCanvas" width="300" height="200"></canvas>
+                <div class="score-text">
+                  <div class="score-value">{{ sustainabilityScore ? sustainabilityScore.sustainability_score.toFixed(1) : '0.0' }}</div>
+                  <div class="score-rating">{{ sustainabilityScore ? sustainabilityScore.rating : 'No score' }}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+
+
+          <!-- Category Totals -->
+          <div class="categories-section">
+            <h2>Category Breakdown</h2>
+            <div class="categories-grid">
+              <div class="category-box">
+                <h3>Supplies & Goods</h3>
+                <canvas ref="suppliesCanvas" width="200" height="200"></canvas>
+              </div>
+              <div class="category-box">
+                <h3>Technology</h3>
+                <canvas ref="techCanvas" width="200" height="200"></canvas>
+              </div>
+              <div class="category-box">
+                <h3>Travel</h3>
+                <canvas ref="travelCanvas" width="200" height="200"></canvas>
+              </div>
+              <div class="category-box">
+                <h3>Food</h3>
+                <canvas ref="foodCanvas" width="200" height="200"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <!-- Highest Impact Items -->
+          <div class="impact-section">
+            <h2>Highest Impact Items</h2>
+            <div class="impact-grid">
+              <div v-for="(item, index) in highestImpactItems.slice(0, 3)" :key="index" class="impact-box">
+                <h4>{{ item.category }}</h4>
+                <p class="item-name">{{ item.name }}</p>
+                <p class="item-impact">Average Impact: {{ formatNumber(item.value, 2) }} EIP</p>
+              </div>
+            </div>
+          </div>
+        </main>
+      </div>
     </div>
   </div>
 </template>
@@ -410,10 +544,210 @@ const sustainabilityScore = ref(null)
 // Get route instance
 const route = useRoute()
 
+// Canvas refs
+const scoreCanvas = ref(null)
+let scoreChart = null
+
+// Category chart refs
+const suppliesCanvas = ref(null)
+const techCanvas = ref(null)
+const travelCanvas = ref(null)
+const foodCanvas = ref(null)
+
+let suppliesChart = null
+let techChart = null
+let travelChart = null
+let foodChart = null
+
 // Load data from sessionStorage on mount
 onMounted(() => {
   loadData()
+  initScoreChart()
+  initCategoryCharts()
 })
+
+// Watch for score changes to update chart
+watch(sustainabilityScore, () => {
+  updateScoreChart()
+})
+
+// Chart initialization functions
+function initScoreChart() {
+  if (scoreCanvas.value) {
+    const ctx = scoreCanvas.value.getContext('2d')
+    const score = sustainabilityScore.value?.sustainability_score || 0
+    const percentage = scorePercentage.value
+
+    // Create semi-circle doughnut chart
+    scoreChart = new Chart(ctx, {
+      type: 'doughnut',
+      data: {
+        datasets: [{
+          data: [percentage, 100 - percentage],
+          backgroundColor: [
+            percentage > 66 ? '#ef4444' : percentage > 33 ? '#f59e0b' : '#10b981',
+            'rgba(255, 255, 255, 0.1)'
+          ],
+          borderWidth: 0,
+          cutout: '70%',
+          circumference: 180,
+          rotation: 270
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            display: false
+          },
+          tooltip: {
+            enabled: false
+          }
+        }
+      }
+    })
+  }
+}
+
+function updateScoreChart() {
+  if (scoreChart) {
+    const percentage = scorePercentage.value
+    scoreChart.data.datasets[0].data = [percentage, 100 - percentage]
+    scoreChart.data.datasets[0].backgroundColor[0] = percentage > 66 ? '#ef4444' : percentage > 33 ? '#f59e0b' : '#10b981'
+    scoreChart.update()
+  }
+}
+
+function initCategoryCharts() {
+  // Initialize pie charts for each category
+  nextTick(() => {
+    initSuppliesChart()
+    initTechChart()
+    initTravelChart()
+    initFoodChart()
+  })
+}
+
+function initSuppliesChart() {
+  if (suppliesCanvas.value && totalCO2.value + totalWater.value + totalEnergy.value + totalGWI.value > 0) {
+    const ctx = suppliesCanvas.value.getContext('2d')
+    suppliesChart = new Chart(ctx, {
+      type: 'pie',
+      data: {
+        labels: ['CO2', 'Water', 'Energy', 'GWI'],
+        datasets: [{
+          data: [totalCO2.value, totalWater.value, totalEnergy.value, totalGWI.value],
+          backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0'],
+          borderWidth: 1
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: 'bottom',
+            labels: {
+              color: 'var(--text)',
+              font: { size: 12 }
+            }
+          }
+        }
+      }
+    })
+  }
+}
+
+function initTechChart() {
+  if (techCanvas.value && techTotalCO2.value + techTotalWater.value + techTotalEnergy.value + techTotalGWI.value > 0) {
+    const ctx = techCanvas.value.getContext('2d')
+    techChart = new Chart(ctx, {
+      type: 'pie',
+      data: {
+        labels: ['CO2', 'Water', 'Energy', 'GWI'],
+        datasets: [{
+          data: [techTotalCO2.value, techTotalWater.value, techTotalEnergy.value, techTotalGWI.value],
+          backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0'],
+          borderWidth: 1
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: 'bottom',
+            labels: {
+              color: 'var(--text)',
+              font: { size: 12 }
+            }
+          }
+        }
+      }
+    })
+  }
+}
+
+function initTravelChart() {
+  if (travelCanvas.value && travelTotalCO2.value + travelTotalWater.value + travelTotalEnergy.value + travelTotalGWI.value > 0) {
+    const ctx = travelCanvas.value.getContext('2d')
+    travelChart = new Chart(ctx, {
+      type: 'pie',
+      data: {
+        labels: ['CO2', 'Water', 'Energy', 'GWI'],
+        datasets: [{
+          data: [travelTotalCO2.value, travelTotalWater.value, travelTotalEnergy.value, travelTotalGWI.value],
+          backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0'],
+          borderWidth: 1
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: 'bottom',
+            labels: {
+              color: 'var(--text)',
+              font: { size: 12 }
+            }
+          }
+        }
+      }
+    })
+  }
+}
+
+function initFoodChart() {
+  if (foodCanvas.value && foodTotalCO2.value + foodTotalWater.value + foodTotalEnergy.value + foodTotalGWI.value > 0) {
+    const ctx = foodCanvas.value.getContext('2d')
+    foodChart = new Chart(ctx, {
+      type: 'pie',
+      data: {
+        labels: ['CO2', 'Water', 'Energy', 'GWI'],
+        datasets: [{
+          data: [foodTotalCO2.value, foodTotalWater.value, foodTotalEnergy.value, foodTotalGWI.value],
+          backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0'],
+          borderWidth: 1
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: 'bottom',
+            labels: {
+              color: 'var(--text)',
+              font: { size: 12 }
+            }
+          }
+        }
+      }
+    })
+  }
+}
 
 // Watch for route changes to reload data when navigating back to home
 watch(() => route.path, (newPath) => {
@@ -1448,4 +1782,571 @@ function closeModal() {
   modalChartData.value = null
   modalChartTitle.value = ''
 }
+
+// Totals page specific functions and computed properties
+const canCalculateTotal = computed(() => {
+  return totalParticipants.value > 0 && totalHours.value > 0 &&
+         (items.value.length > 0 || techItems.value.length > 0 ||
+          travelItems.value.length > 0 || foodItems.value.length > 0)
+})
+
+const scorePercentage = computed(() => {
+  if (!sustainabilityScore.value) return 0
+  // Scale the score to 0-100% where 0 is best (Platinum) and 100% is worst
+  const score = sustainabilityScore.value.sustainability_score
+  // Platinum: <100, Green: 100-149, High Impact: >=150
+  if (score < 100) return Math.max(0, (score / 100) * 33) // 0-33% range
+  if (score < 150) return 33 + ((score - 100) / 50) * 33 // 33-66% range
+  return Math.min(100, 66 + ((score - 150) / 50) * 34) // 66-100% range
+})
+
+const highestImpactItems = computed(() => {
+  const allItems = []
+
+  // Add supplies items
+  items.value.forEach((item, index) => {
+    const avgImpact = (item.co2 + item.water + item.energy + item.gwi) / 4
+    allItems.push({
+      id: `supplies-${index}`,
+      category: 'Supplies',
+      name: item.label,
+      metric: 'Average Impact',
+      value: avgImpact,
+      unit: 'EIP'
+    })
+  })
+
+  // Add tech items
+  techItems.value.forEach((item, index) => {
+    const avgImpact = (item.co2 + item.water + item.energy + item.gwi) / 4
+    allItems.push({
+      id: `tech-${index}`,
+      category: 'Technology',
+      name: item.type,
+      metric: 'Average Impact',
+      value: avgImpact,
+      unit: 'EIP'
+    })
+  })
+
+  // Add travel items
+  travelItems.value.forEach((item, index) => {
+    const avgImpact = (item.co2 + item.water + item.energy + item.gwi) / 4
+    allItems.push({
+      id: `travel-${index}`,
+      category: 'Travel',
+      name: `${item.mode} (${item.distance}km)`,
+      metric: 'Average Impact',
+      value: avgImpact,
+      unit: 'EIP'
+    })
+  })
+
+  // Add food items
+  foodItems.value.forEach((item, index) => {
+    const avgImpact = (item.co2 + item.water + item.energy + item.gwi) / 4
+    allItems.push({
+      id: `food-${index}`,
+      category: 'Food',
+      name: `${item.packaging} - ${item.diet}`,
+      metric: 'Average Impact',
+      value: avgImpact,
+      unit: 'EIP'
+    })
+  })
+
+  // Sort by impact (highest first) and take top 3
+  return allItems
+    .sort((a, b) => b.value - a.value)
+    .slice(0, 3)
+})
+
+async function calculateSustainabilityScore() {
+  try {
+    totalErrorMessage.value = ''
+
+    const response = await fetch('http://localhost:5001/total', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        physical_waste: [
+          totalCO2.value,
+          totalWater.value,
+          totalEnergy.value,
+          totalGWI.value
+        ],
+        travel: [
+          travelTotalCO2.value,
+          travelTotalWater.value,
+          travelTotalEnergy.value,
+          travelTotalGWI.value
+        ],
+        technology: [
+          techTotalCO2.value,
+          techTotalWater.value,
+          techTotalEnergy.value,
+          techTotalGWI.value
+        ],
+        food: [
+          foodTotalCO2.value,
+          foodTotalWater.value,
+          foodTotalEnergy.value,
+          foodTotalGWI.value
+        ],
+        participants: totalParticipants.value,
+        hours: totalHours.value
+      })
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json()
+      throw new Error(errorData.error || 'API request failed')
+    }
+
+    const data = await response.json()
+    sustainabilityScore.value = data
+
+  } catch (error) {
+    console.error('Error calculating sustainability score:', error)
+    totalErrorMessage.value = `Failed to calculate score: ${error.message}`
+    sustainabilityScore.value = null
+  }
+}
 </script>
+
+<style scoped>
+.totals-page {
+  padding: 2rem;
+  text-align: center;
+}
+
+.totals-page h1 {
+  color: #10b981;
+  margin-bottom: 1rem;
+}
+
+.totals-page p {
+  color: #666;
+  font-size: 1.1rem;
+  margin-bottom: 2rem;
+}
+
+.totals-header {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  max-width: 800px;
+  margin-bottom: 2rem;
+}
+
+/* Layout styles */
+.totals-layout {
+  display: flex;
+  gap: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 2rem;
+}
+
+.totals-sidebar {
+  flex: 0 0 350px;
+  background: linear-gradient(135deg, var(--surface) 0%, var(--surface-hover) 100%);
+  backdrop-filter: blur(10px);
+  border-radius: 16px;
+  padding: 1.5rem;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--border);
+  height: fit-content;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.totals-main {
+  flex: 1;
+  min-width: 0;
+}
+
+/* EIP explanation */
+.eip-explanation {
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  background: rgba(16, 185, 129, 0.1);
+  border-radius: 12px;
+  border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+.eip-explanation p {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--text);
+  line-height: 1.4;
+}
+
+.eip-explanation a {
+  color: #10b981;
+  text-decoration: none;
+}
+
+.eip-explanation a:hover {
+  text-decoration: underline;
+}
+
+/* All items section */
+.all-items-section h2 {
+  color: #10b981;
+  font-size: 1.4rem;
+  margin-bottom: 1rem;
+  text-align: center;
+}
+
+.section-items {
+  margin-bottom: 1.5rem;
+}
+
+.section-items h3 {
+  color: var(--text);
+  font-size: 1.1rem;
+  margin-bottom: 0.5rem;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 0.25rem;
+}
+
+.section-items ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.section-items li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem;
+  margin-bottom: 0.25rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  border: 1px solid var(--border);
+}
+
+.label-box {
+  font-weight: 600;
+  color: var(--text);
+  flex: 1;
+  text-align: left;
+}
+
+.value-box {
+  font-weight: 500;
+  color: #10b981;
+  background: rgba(16, 185, 129, 0.1);
+  padding: 0.25rem 0.5rem;
+  border-radius: 6px;
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  text-align: center;
+  min-width: 60px;
+}
+
+/* Event Parameters Section */
+.event-params-section {
+  background: linear-gradient(135deg, var(--surface) 0%, var(--surface-hover) 100%);
+  backdrop-filter: blur(10px);
+  border-radius: 16px;
+  padding: 2rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--border);
+}
+
+.event-params-section h2 {
+  color: #10b981;
+  margin-bottom: 1.5rem;
+  font-size: 1.5rem;
+}
+
+.params-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 1rem;
+  align-items: end;
+}
+
+.param-box {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.param-box label {
+  font-weight: 600;
+  color: var(--text);
+  font-size: 0.9rem;
+}
+
+.param-box input {
+  padding: 0.75rem;
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text);
+  font-size: 1rem;
+  transition: all 0.3s ease;
+}
+
+.param-box input:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.2);
+}
+
+.calculate-btn {
+  padding: 0.75rem 1.5rem;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+}
+
+.calculate-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(16, 185, 129, 0.4);
+}
+
+.calculate-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Score Meter Section */
+.score-section {
+  background: linear-gradient(135deg, var(--surface) 0%, var(--surface-hover) 100%);
+  backdrop-filter: blur(10px);
+  border-radius: 16px;
+  padding: 2rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--border);
+}
+
+.score-section h2 {
+  color: #10b981;
+  margin-bottom: 1.5rem;
+  font-size: 1.5rem;
+}
+
+.score-meter {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.semi-circle-container {
+  position: relative;
+  width: 300px;
+  height: 200px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.score-text {
+  position: absolute;
+  text-align: center;
+  z-index: 2;
+}
+
+.score-value {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--text);
+  display: block;
+}
+
+.score-rating {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text);
+  margin-top: 0.5rem;
+}
+
+.score-rating {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: var(--text);
+  text-align: center;
+}
+
+/* Eco-Score Section */
+.eco-score-section {
+  background: linear-gradient(135deg, var(--surface) 0%, var(--surface-hover) 100%);
+  backdrop-filter: blur(10px);
+  border-radius: 16px;
+  padding: 2rem;
+  margin: 2rem auto;
+  max-width: 600px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--border);
+}
+
+.eco-score-section h2 {
+  color: #10b981;
+  margin-bottom: 1.5rem;
+  font-size: 1.5rem;
+}
+
+.eco-score-box {
+  text-align: center;
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: var(--text);
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  border: 1px solid var(--border);
+}
+
+/* Categories Section */
+.categories-section {
+  background: linear-gradient(135deg, var(--surface) 0%, var(--surface-hover) 100%);
+  backdrop-filter: blur(10px);
+  border-radius: 16px;
+  padding: 2rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--border);
+}
+
+.categories-section h2 {
+  color: #10b981;
+  margin-bottom: 1.5rem;
+  font-size: 1.5rem;
+}
+
+.categories-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+}
+
+.category-box {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  padding: 1.5rem;
+  border: 1px solid var(--border);
+}
+
+.category-box h3 {
+  color: var(--text);
+  margin-bottom: 1rem;
+  font-size: 1.1rem;
+  text-align: center;
+}
+
+.category-metrics {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.metric {
+  font-size: 0.9rem;
+  color: var(--text);
+  padding: 0.5rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Impact Section */
+.impact-section {
+  background: linear-gradient(135deg, var(--surface) 0%, var(--surface-hover) 100%);
+  backdrop-filter: blur(10px);
+  border-radius: 16px;
+  padding: 2rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--border);
+}
+
+.impact-section h2 {
+  color: #10b981;
+  margin-bottom: 1.5rem;
+  font-size: 1.5rem;
+}
+
+.impact-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.impact-box {
+  background: rgba(239, 68, 68, 0.1);
+  border-radius: 12px;
+  padding: 1rem;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  text-align: center;
+}
+
+.impact-box h4 {
+  color: #ef4444;
+  margin-bottom: 0.5rem;
+  font-size: 1rem;
+}
+
+.item-name {
+  color: var(--text);
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.item-impact {
+  color: #ef4444;
+  font-weight: 500;
+  font-size: 0.85rem;
+}
+
+/* Error Section */
+.error {
+  color: #ef4444;
+  margin: 0;
+  font-weight: 500;
+  text-align: center;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .totals-layout {
+    flex-direction: column;
+  }
+
+  .totals-sidebar {
+    flex: none;
+    max-height: 50vh;
+  }
+
+  .params-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .calculate-btn {
+    width: 100%;
+  }
+
+  .categories-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .impact-grid {
+    grid-template-columns: 1fr;
+  }
+}
+</style>
