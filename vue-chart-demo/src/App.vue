@@ -49,54 +49,7 @@
             <p>The metric EIP refers to <a href="https://support.ecoinvent.org/impact-assessment" target="_blank">Environmental Impact Points</a></p>
           </div>
 
-          <!-- All Items Display -->
-          <div class="all-items-section">
-            <h2>All Items</h2>
 
-            <!-- Supplies Items -->
-            <div v-if="items.length > 0" class="section-items">
-              <h3>Supplies</h3>
-              <ul>
-                <li v-for="(item, index) in items" :key="index">
-                  <span class="label-box">{{ item.label }}</span>
-                  <span class="value-box">{{ item.value }}</span>
-                </li>
-              </ul>
-            </div>
-
-            <!-- Technology Items -->
-            <div v-if="techItems.length > 0" class="section-items">
-              <h3>Technology</h3>
-              <ul>
-                <li v-for="(item, index) in techItems" :key="index">
-                  <span class="label-box">{{ item.type }}</span>
-                  <span class="value-box">{{ item.num }} ({{ item.participants }} participants)</span>
-                </li>
-              </ul>
-            </div>
-
-            <!-- Travel Items -->
-            <div v-if="travelItems.length > 0" class="section-items">
-              <h3>Travel</h3>
-              <ul>
-                <li v-for="(item, index) in travelItems" :key="index">
-                  <span class="label-box">{{ item.mode }}</span>
-                  <span class="value-box">{{ item.distance }}km ({{ item.participants }} participants)</span>
-                </li>
-              </ul>
-            </div>
-
-            <!-- Food Items -->
-            <div v-if="foodItems.length > 0" class="section-items">
-              <h3>Food</h3>
-              <ul>
-                <li v-for="(item, index) in foodItems" :key="index">
-                  <span class="label-box">{{ item.packaging }} - {{ item.diet }}</span>
-                  <span class="value-box">{{ item.num }} meals</span>
-                </li>
-              </ul>
-            </div>
-          </div>
 
           <!-- Supplies Section Inputs -->
           <div v-if="currentSection === 'supplies'">
@@ -261,23 +214,23 @@
         <main class="main-content">
           <p style="text-align: center; font-size: 0.9em; color: #666;">Click on the chart to fullscreen it.</p>
 
-          <!-- Aggregated Charts (All Sections) -->
+          <!-- Current Section Charts -->
           <div class="charts-grid">
             <div class="chart-container">
               <h4>CO2: kg CO2</h4>
-              <ChartComponent :data="allCO2Data" title="CO2 Emissions" @chart-click="openModal" />
+              <ChartComponent :data="currentCO2Data" title="CO2 Emissions" @chart-click="openModal" />
             </div>
             <div class="chart-container">
               <h4>Water Resources: EIP</h4>
-              <ChartComponent :data="allWaterData" title="Water Resources" @chart-click="openModal" />
+              <ChartComponent :data="currentWaterData" title="Water Resources" @chart-click="openModal" />
             </div>
             <div class="chart-container">
               <h4>Energy Resource: EIP</h4>
-              <ChartComponent :data="allEnergyData" title="Energy Resources" @chart-click="openModal" />
+              <ChartComponent :data="currentEnergyData" title="Energy Resources" @chart-click="openModal" />
             </div>
             <div class="chart-container">
               <h4>GWI: EIP</h4>
-              <ChartComponent :data="allGWIChartData" title="Global Warming Index" @chart-click="openModal" />
+              <ChartComponent :data="currentGWIChartData" title="Global Warming Index" @chart-click="openModal" />
             </div>
           </div>
 
