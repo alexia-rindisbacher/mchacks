@@ -400,11 +400,26 @@
           <div class="score-section">
             <h2>Sustainability Score</h2>
             <div class="score-meter">
-              <div class="semi-circle-container">
-                <canvas ref="scoreCanvas" width="300" height="200"></canvas>
-                <div class="score-text">
-                  <div class="score-value">{{ sustainabilityScore ? sustainabilityScore.sustainability_score.toFixed(1) : '0.0' }}</div>
-                  <div class="score-rating">{{ sustainabilityScore ? sustainabilityScore.rating : 'No score' }}</div>
+              <div class="speedometer-container">
+                <VueSpeedometer
+                  :value="speedometerValue"
+                  :minValue="0"
+                  :maxValue="200"
+                  :segments="3"
+                  :segmentColors="['#10b981', '#f59e0b', '#ef4444']"
+                  :needleColor="'#64748b'"
+                  :textColor="'var(--text)'"
+                  :width="300"
+                  :height="200"
+                  :ringWidth="20"
+                  :needleTransitionDuration="1000"
+                  :needleTransition="'easeElastic'"
+                  :showLabels="false"
+                  :customSegmentLabels="[]"
+                />
+                <div class="score-info">
+                  <div class="score-value">{{ sustainabilityScore ? sustainabilityScore.sustainability_score.toFixed(1) : '0.0' }} EIP</div>
+                  <div class="score-rating">{{ sustainabilityScore ? sustainabilityScore.rating : 'No score calculated' }}</div>
                 </div>
               </div>
             </div>
@@ -414,23 +429,23 @@
 
           <!-- Category Totals -->
           <div class="categories-section">
-            <h2>Category Breakdown</h2>
+            <h2>Emission Breakdown by Category</h2>
             <div class="categories-grid">
               <div class="category-box">
-                <h3>Supplies & Goods</h3>
-                <canvas ref="suppliesCanvas" width="200" height="200"></canvas>
+                <h3>CO2 Emissions</h3>
+                <canvas ref="co2BreakdownCanvas" width="180" height="140"></canvas>
               </div>
               <div class="category-box">
-                <h3>Technology</h3>
-                <canvas ref="techCanvas" width="200" height="200"></canvas>
+                <h3>Water Impact</h3>
+                <canvas ref="waterBreakdownCanvas" width="180" height="140"></canvas>
               </div>
               <div class="category-box">
-                <h3>Travel</h3>
-                <canvas ref="travelCanvas" width="200" height="200"></canvas>
+                <h3>Energy Impact</h3>
+                <canvas ref="energyBreakdownCanvas" width="180" height="140"></canvas>
               </div>
               <div class="category-box">
-                <h3>Food</h3>
-                <canvas ref="foodCanvas" width="200" height="200"></canvas>
+                <h3>GWI Impact</h3>
+                <canvas ref="gwiBreakdownCanvas" width="180" height="140"></canvas>
               </div>
             </div>
           </div>
@@ -457,6 +472,7 @@ import { ref, computed, onMounted, nextTick, watch } from "vue"
 import { useRoute } from 'vue-router'
 import Chart from "chart.js/auto"
 import ChartComponent from "./components/ChartComponent.vue"
+import VueSpeedometer from "vue-speedometer"
 
 // Helper function to format numbers and remove trailing zeros
 function formatNumber(num, maxDecimals = 4) {
@@ -544,208 +560,292 @@ const sustainabilityScore = ref(null)
 // Get route instance
 const route = useRoute()
 
-// Canvas refs
-const scoreCanvas = ref(null)
-let scoreChart = null
-
 // Category chart refs
-const suppliesCanvas = ref(null)
-const techCanvas = ref(null)
-const travelCanvas = ref(null)
-const foodCanvas = ref(null)
+const co2BreakdownCanvas = ref(null)
+const waterBreakdownCanvas = ref(null)
+const energyBreakdownCanvas = ref(null)
+const gwiBreakdownCanvas = ref(null)
 
-let suppliesChart = null
-let techChart = null
-let travelChart = null
-let foodChart = null
+let co2BreakdownChart = null
+let waterBreakdownChart = null
+let energyBreakdownChart = null
+let gwiBreakdownChart = null
 
 // Load data from sessionStorage on mount
 onMounted(() => {
   loadData()
-  initScoreChart()
   initCategoryCharts()
 })
 
-// Watch for score changes to update chart
-watch(sustainabilityScore, () => {
-  updateScoreChart()
-})
-
-// Chart initialization functions
-function initScoreChart() {
-  if (scoreCanvas.value) {
-    const ctx = scoreCanvas.value.getContext('2d')
-    const score = sustainabilityScore.value?.sustainability_score || 0
-    const percentage = scorePercentage.value
-
-    // Create semi-circle doughnut chart
-    scoreChart = new Chart(ctx, {
-      type: 'doughnut',
-      data: {
-        datasets: [{
-          data: [percentage, 100 - percentage],
-          backgroundColor: [
-            percentage > 66 ? '#ef4444' : percentage > 33 ? '#f59e0b' : '#10b981',
-            'rgba(255, 255, 255, 0.1)'
-          ],
-          borderWidth: 0,
-          cutout: '70%',
-          circumference: 180,
-          rotation: 270
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: {
-            display: false
-          },
-          tooltip: {
-            enabled: false
-          }
-        }
-      }
+// Watch for route changes to initialize charts when totals page becomes active
+watch(() => route.path, (newPath) => {
+  if (newPath === '/') {
+    loadData()
+  } else if (newPath === '/totals') {
+    // Initialize charts when totals page becomes active
+    nextTick(() => {
+      initCategoryCharts()
     })
   }
-}
+})
 
-function updateScoreChart() {
-  if (scoreChart) {
-    const percentage = scorePercentage.value
-    scoreChart.data.datasets[0].data = [percentage, 100 - percentage]
-    scoreChart.data.datasets[0].backgroundColor[0] = percentage > 66 ? '#ef4444' : percentage > 33 ? '#f59e0b' : '#10b981'
-    scoreChart.update()
-  }
-}
-
+// Category chart initialization functions
 function initCategoryCharts() {
-  // Initialize pie charts for each category
+  // Initialize pie charts for emission breakdown by category
   nextTick(() => {
-    initSuppliesChart()
-    initTechChart()
-    initTravelChart()
-    initFoodChart()
+    initCO2BreakdownChart()
+    initWaterBreakdownChart()
+    initEnergyBreakdownChart()
+    initGWIBreakdownChart()
   })
 }
 
-function initSuppliesChart() {
-  if (suppliesCanvas.value && totalCO2.value + totalWater.value + totalEnergy.value + totalGWI.value > 0) {
-    const ctx = suppliesCanvas.value.getContext('2d')
-    suppliesChart = new Chart(ctx, {
-      type: 'pie',
-      data: {
-        labels: ['CO2', 'Water', 'Energy', 'GWI'],
-        datasets: [{
-          data: [totalCO2.value, totalWater.value, totalEnergy.value, totalGWI.value],
-          backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0'],
-          borderWidth: 1
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: {
-            position: 'bottom',
-            labels: {
-              color: 'var(--text)',
-              font: { size: 12 }
+// Emission breakdown chart functions
+function initCO2BreakdownChart() {
+  if (co2BreakdownCanvas.value) {
+    // Destroy existing chart if it exists
+    if (co2BreakdownChart) {
+      co2BreakdownChart.destroy()
+    }
+
+    const ctx = co2BreakdownCanvas.value.getContext('2d')
+    const canvas = co2BreakdownCanvas.value
+
+    // Set canvas size to match container
+    const container = canvas.parentElement
+    const containerWidth = container.offsetWidth - 32 // Account for padding
+    const containerHeight = container.offsetHeight - 80 // Account for title and padding
+
+    canvas.width = Math.max(containerWidth, 150)
+    canvas.height = Math.max(containerHeight, 120)
+
+    const data = [totalCO2.value, techTotalCO2.value, travelTotalCO2.value, foodTotalCO2.value]
+    const filteredData = data.filter(val => val > 0)
+    const filteredLabels = ['Supplies', 'Technology', 'Travel', 'Food'].filter((_, i) => data[i] > 0)
+    const filteredColors = ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0'].filter((_, i) => data[i] > 0)
+
+    if (filteredData.length > 0) {
+      co2BreakdownChart = new Chart(ctx, {
+        type: 'pie',
+        data: {
+          labels: filteredLabels,
+          datasets: [{
+            data: filteredData,
+            backgroundColor: filteredColors,
+            borderWidth: 1
+          }]
+        },
+        options: {
+          responsive: false, // We'll handle resizing manually
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'bottom',
+              labels: {
+                color: 'var(--text)',
+                font: { size: 10 },
+                padding: 8,
+                boxWidth: 12
+              }
+            }
+          },
+          layout: {
+            padding: {
+              top: 5,
+              bottom: 5,
+              left: 5,
+              right: 5
             }
           }
         }
-      }
-    })
+      })
+    }
   }
 }
 
-function initTechChart() {
-  if (techCanvas.value && techTotalCO2.value + techTotalWater.value + techTotalEnergy.value + techTotalGWI.value > 0) {
-    const ctx = techCanvas.value.getContext('2d')
-    techChart = new Chart(ctx, {
-      type: 'pie',
-      data: {
-        labels: ['CO2', 'Water', 'Energy', 'GWI'],
-        datasets: [{
-          data: [techTotalCO2.value, techTotalWater.value, techTotalEnergy.value, techTotalGWI.value],
-          backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0'],
-          borderWidth: 1
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: {
-            position: 'bottom',
-            labels: {
-              color: 'var(--text)',
-              font: { size: 12 }
+function initWaterBreakdownChart() {
+  if (waterBreakdownCanvas.value) {
+    // Destroy existing chart if it exists
+    if (waterBreakdownChart) {
+      waterBreakdownChart.destroy()
+    }
+
+    const ctx = waterBreakdownCanvas.value.getContext('2d')
+    const canvas = waterBreakdownCanvas.value
+
+    // Set canvas size to match container
+    const container = canvas.parentElement
+    const containerWidth = container.offsetWidth - 32 // Account for padding
+    const containerHeight = container.offsetHeight - 80 // Account for title and padding
+
+    canvas.width = Math.max(containerWidth, 150)
+    canvas.height = Math.max(containerHeight, 120)
+
+    const data = [totalWater.value, techTotalWater.value, travelTotalWater.value, foodTotalWater.value]
+    const filteredData = data.filter(val => val > 0)
+    const filteredLabels = ['Supplies', 'Technology', 'Travel', 'Food'].filter((_, i) => data[i] > 0)
+    const filteredColors = ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0'].filter((_, i) => data[i] > 0)
+
+    if (filteredData.length > 0) {
+      waterBreakdownChart = new Chart(ctx, {
+        type: 'pie',
+        data: {
+          labels: filteredLabels,
+          datasets: [{
+            data: filteredData,
+            backgroundColor: filteredColors,
+            borderWidth: 1
+          }]
+        },
+        options: {
+          responsive: false, // We'll handle resizing manually
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'bottom',
+              labels: {
+                color: 'var(--text)',
+                font: { size: 10 },
+                padding: 8,
+                boxWidth: 12
+              }
+            }
+          },
+          layout: {
+            padding: {
+              top: 5,
+              bottom: 5,
+              left: 5,
+              right: 5
             }
           }
         }
-      }
-    })
+      })
+    }
   }
 }
 
-function initTravelChart() {
-  if (travelCanvas.value && travelTotalCO2.value + travelTotalWater.value + travelTotalEnergy.value + travelTotalGWI.value > 0) {
-    const ctx = travelCanvas.value.getContext('2d')
-    travelChart = new Chart(ctx, {
-      type: 'pie',
-      data: {
-        labels: ['CO2', 'Water', 'Energy', 'GWI'],
-        datasets: [{
-          data: [travelTotalCO2.value, travelTotalWater.value, travelTotalEnergy.value, travelTotalGWI.value],
-          backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0'],
-          borderWidth: 1
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: {
-            position: 'bottom',
-            labels: {
-              color: 'var(--text)',
-              font: { size: 12 }
+function initEnergyBreakdownChart() {
+  if (energyBreakdownCanvas.value) {
+    // Destroy existing chart if it exists
+    if (energyBreakdownChart) {
+      energyBreakdownChart.destroy()
+    }
+
+    const ctx = energyBreakdownCanvas.value.getContext('2d')
+    const canvas = energyBreakdownCanvas.value
+
+    // Set canvas size to match container
+    const container = canvas.parentElement
+    const containerWidth = container.offsetWidth - 32 // Account for padding
+    const containerHeight = container.offsetHeight - 80 // Account for title and padding
+
+    canvas.width = Math.max(containerWidth, 150)
+    canvas.height = Math.max(containerHeight, 120)
+
+    const data = [totalEnergy.value, techTotalEnergy.value, travelTotalEnergy.value, foodTotalEnergy.value]
+    const filteredData = data.filter(val => val > 0)
+    const filteredLabels = ['Supplies', 'Technology', 'Travel', 'Food'].filter((_, i) => data[i] > 0)
+    const filteredColors = ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0'].filter((_, i) => data[i] > 0)
+
+    if (filteredData.length > 0) {
+      energyBreakdownChart = new Chart(ctx, {
+        type: 'pie',
+        data: {
+          labels: filteredLabels,
+          datasets: [{
+            data: filteredData,
+            backgroundColor: filteredColors,
+            borderWidth: 1
+          }]
+        },
+        options: {
+          responsive: false, // We'll handle resizing manually
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'bottom',
+              labels: {
+                color: 'var(--text)',
+                font: { size: 10 },
+                padding: 8,
+                boxWidth: 12
+              }
+            }
+          },
+          layout: {
+            padding: {
+              top: 5,
+              bottom: 5,
+              left: 5,
+              right: 5
             }
           }
         }
-      }
-    })
+      })
+    }
   }
 }
 
-function initFoodChart() {
-  if (foodCanvas.value && foodTotalCO2.value + foodTotalWater.value + foodTotalEnergy.value + foodTotalGWI.value > 0) {
-    const ctx = foodCanvas.value.getContext('2d')
-    foodChart = new Chart(ctx, {
-      type: 'pie',
-      data: {
-        labels: ['CO2', 'Water', 'Energy', 'GWI'],
-        datasets: [{
-          data: [foodTotalCO2.value, foodTotalWater.value, foodTotalEnergy.value, foodTotalGWI.value],
-          backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0'],
-          borderWidth: 1
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: {
-            position: 'bottom',
-            labels: {
-              color: 'var(--text)',
-              font: { size: 12 }
+function initGWIBreakdownChart() {
+  if (gwiBreakdownCanvas.value) {
+    // Destroy existing chart if it exists
+    if (gwiBreakdownChart) {
+      gwiBreakdownChart.destroy()
+    }
+
+    const ctx = gwiBreakdownCanvas.value.getContext('2d')
+    const canvas = gwiBreakdownCanvas.value
+
+    // Set canvas size to match container
+    const container = canvas.parentElement
+    const containerWidth = container.offsetWidth - 32 // Account for padding
+    const containerHeight = container.offsetHeight - 80 // Account for title and padding
+
+    canvas.width = Math.max(containerWidth, 150)
+    canvas.height = Math.max(containerHeight, 120)
+
+    const data = [totalGWI.value, techTotalGWI.value, travelTotalGWI.value, foodTotalGWI.value]
+    const filteredData = data.filter(val => val > 0)
+    const filteredLabels = ['Supplies', 'Technology', 'Travel', 'Food'].filter((_, i) => data[i] > 0)
+    const filteredColors = ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0'].filter((_, i) => data[i] > 0)
+
+    if (filteredData.length > 0) {
+      gwiBreakdownChart = new Chart(ctx, {
+        type: 'pie',
+        data: {
+          labels: filteredLabels,
+          datasets: [{
+            data: filteredData,
+            backgroundColor: filteredColors,
+            borderWidth: 1
+          }]
+        },
+        options: {
+          responsive: false, // We'll handle resizing manually
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'bottom',
+              labels: {
+                color: 'var(--text)',
+                font: { size: 10 },
+                padding: 8,
+                boxWidth: 12
+              }
+            }
+          },
+          layout: {
+            padding: {
+              top: 5,
+              bottom: 5,
+              left: 5,
+              right: 5
             }
           }
         }
-      }
-    })
+      })
+    }
   }
 }
 
@@ -1800,6 +1900,11 @@ const scorePercentage = computed(() => {
   return Math.min(100, 66 + ((score - 150) / 50) * 34) // 66-100% range
 })
 
+const speedometerValue = computed(() => {
+  if (!sustainabilityScore.value) return 0
+  return Math.min(200, Math.max(0, sustainabilityScore.value.sustainability_score))
+})
+
 const highestImpactItems = computed(() => {
   const allItems = []
 
@@ -2146,33 +2251,34 @@ async function calculateSustainabilityScore() {
   gap: 1rem;
 }
 
-.semi-circle-container {
+.speedometer-container {
   position: relative;
   width: 300px;
   height: 200px;
   display: flex;
   justify-content: center;
   align-items: center;
+  margin-bottom: 1rem;
 }
 
-.score-text {
-  position: absolute;
+.score-info {
   text-align: center;
-  z-index: 2;
+  margin-top: 1rem;
 }
 
-.score-value {
-  font-size: 2rem;
+.score-info .score-value {
+  font-size: 1.5rem;
   font-weight: 700;
   color: var(--text);
   display: block;
+  margin-bottom: 0.5rem;
 }
 
-.score-rating {
-  font-size: 1rem;
+.score-info .score-rating {
+  font-size: 1.2rem;
   font-weight: 600;
   color: var(--text);
-  margin-top: 0.5rem;
+  display: block;
 }
 
 .score-rating {
@@ -2237,8 +2343,11 @@ async function calculateSustainabilityScore() {
 .category-box {
   background: rgba(255, 255, 255, 0.05);
   border-radius: 12px;
-  padding: 1.5rem;
+  padding: 1rem;
   border: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .category-box h3 {
